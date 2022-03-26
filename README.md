@@ -1,4 +1,4 @@
-#Info
+## Info
 
 Secret is an easy level linux box hosted on HTB, which focuses on JWT exploitation and remote command injection.
 
@@ -7,7 +7,10 @@ IP: 10.10.11.120
 
 # Fingerprinting
 
-`nmap -sC -sV $IP
+Let's start out with an nmap scan.
+
+```
+nmap -sC -sV $IP
 
 Starting Nmap 7.92 ( https://nmap.org ) at 2022-03-07 18:58 EST
 Nmap scan report for secret.htb (10.10.11.120)
@@ -27,11 +30,12 @@ PORT     STATE SERVICE VERSION
 Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
 
 Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-Nmap done: 1 IP address (1 host up) scanned in 46.10 seconds`
+Nmap done: 1 IP address (1 host up) scanned in 46.10 seconds
+```
 
 Not too much out of the usual here, lets take a look at the website.
 
-<!img1.png>
+[image]: 
 
 Looks to be some sort of API that we have to interact with.
 
@@ -46,7 +50,8 @@ The post request returns our username, so it seems to have gone through, we now 
 
 `curl -X POST -H 'Content-Type: application/json' -d '{"email":"inky@dasith.works", "password":"userinky"}' http://10.10.11.120:3000/api/user/login
 
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MjI2OWVkZjE3YjcxZjA0NjE2YWNhMDMiLCJuYW1lIjoidXNlcmlua3kiLCJlbWFpbCI6Imlua3lAZGFzaXRoLndvcmtzIiwiaWF0IjoxNjQ2Njk4NDI1fQ.zh32hjab2xHlJd-WTDVuzksBneaenJpeJMLtFlExEME `
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MjI2OWVkZjE3YjcxZjA0NjE2YWNhMDMiLCJuYW1lIjoidXNlcmlua3kiLCJlbWFpbCI6Imlua3lAZGFzaXRoLndvcmtz![img1-min](https://user-images.githubusercontent.com/72148770/160254513-ad728559-3d6f-405b-bade-759fe33c8b50.png)
+IiwiaWF0IjoxNjQ2Njk4NDI1fQ.zh32hjab2xHlJd-WTDVuzksBneaenJpeJMLtFlExEME `
 
 Now we have a valid JWT token! Let's head over to https://jwt.io in order to take a look at what it does!
 
